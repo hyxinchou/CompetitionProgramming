@@ -3,7 +3,7 @@
 
 using i64 = long long;
 
-constexpr int P = 998244353;
+constexpr int P = 2012;
 
 // assume -P <= x < 2P
 int norm(int x) {
@@ -75,76 +75,43 @@ struct Z {
     }
 };
 
-template <typename T> T pow(T a, long long b) {
-    assert(b >= 0);
-    T r = 1; while (b) { if (b & 1) r *= a; b >>= 1; a *= a; } return r;
-}
-
-struct nCr_with_Pascal_Triangle {
-    std::vector<std::vector<Z>> C;
-    int N;
-    nCr_with_Pascal_Triangle(int _N) {
-        N = _N;
-        C = std::vector<std::vector<Z>> (_N + 1, std::vector<Z>(_N + 1, 0));
-    }
-    void build() {
-        C[0][0] = 1;
-        for (int i = 1; i <= N; ++i) {
-            C[i][0] = 1;
-            for (int j = 1; j < i + 1; ++j) {
-                C[i][j] = C[i - 1][j - 1] + C[i - 1][j];
-            }
-        }
-    }
-    Z nCr(int n, int r) {
-        return C[n][r];
-    }
-};
-
 void jiangly_fan() {
     std::string S; std::cin >> S;
 
     int len = int(S.size());
 
-    std::vector<std::string> Comp;
-    std::stack<char> Stack;
-    std::string g = "", _empty = "";
-
+    std::vector<int> convert;
     for (auto c : S) {
-        if (Stack.empty()) {
-            if (g.size()) {
-                Comp.push_back(g);
+        convert.push_back(c == '(' ? 1 : -1);
+    }
 
-                g = _empty;
+    std::vector<int> pref_count(len + 1, 0);
+    for (int i = 0; i < len; ++i) {
+        pref_count[i + 1] = pref_count[i] + convert[i];
+    }
+    // for (auto v : convert) {
+    //     std::cout << v << " ";
+    // }
+    // std::cout << "\n";
+
+    std::vector<std::vector<Z>> dp(len + 1, std::vector<Z> (len + 1, 0));
+    dp[0][0] = 1;
+
+    for (int i = 0; i < len; ++i) {
+        for (int msk1 = 0; msk1 < len; ++msk1) {
+            int msk2 = pref_count[i] - msk1;
+
+            if (msk2 >= 0 && msk1 + convert[i] >= 0) {
+                dp[i + 1][msk1 + convert[i]] += dp[i][msk1];
             }
 
-            Stack.push(c);
-        } else {
-            if (Stack.top() == '(' && c == ')') {
-                Stack.pop();
-            } else {
-                Stack.push(c);
+            if (msk2 + convert[i] >= 0) {
+                dp[i + 1][msk1] += dp[i][msk1];
             }
         }
-
-        g += c;
     }
 
-    nCr_with_Pascal_Triangle F(1007);
-    F.build();
-
-    const int Nxm = 1E5;
-
-    Comp.push_back(g);
-
-    Z answer = 1;
-
-    std::vector<Z> ret;
-
-    for (auto v : Comp) {
-        
-    }
-    std::cout << answer.val() << "\n";
+    std::cout << dp[len][0].val() << "\n";
 }
 
 int main() {
